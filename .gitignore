@@ -19,3 +19,6 @@ evals/results/*
 !evals/results/.gitkeep
 logs/
 .DS_Store
+
+# runtime state: request log + budget database
+state/

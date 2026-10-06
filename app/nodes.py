@@ -8,7 +8,7 @@ from langchain_anthropic import ChatAnthropic
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 
 from . import db, sql_guard
-from .config import MODEL, ROWS_FOR_SUMMARY
+from .config import LLM_MAX_RETRIES, LLM_TIMEOUT_S, MODEL, ROWS_FOR_SUMMARY
 from .prompts import SQL_SYSTEM, SUMMARY_SYSTEM, build_schema_text
 from .state import AgentState
 
@@ -16,7 +16,9 @@ from .state import AgentState
 @lru_cache(maxsize=1)
 def get_llm() -> ChatAnthropic:
     # temperature=0: we want the most likely SQL, not creative SQL (also makes evals more repeatable)
-    return ChatAnthropic(model=MODEL, temperature=0, max_tokens=1024)
+    return ChatAnthropic(
+        model=MODEL, temperature=0, max_tokens=1024, timeout=LLM_TIMEOUT_S, max_retries=LLM_MAX_RETRIES
+    )
 
 
 def _text(message) -> str:
