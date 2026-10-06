@@ -1,0 +1,21 @@
+# secrets
+.env
+.env.*
+!.env.example
+
+# python
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# generated data (reproducible with `python -m data.generate`)
+data/parquet/
+data/*.duckdb
+data/*.duckdb.wal
+
+# eval + logs (keep the summary table in the README, not raw runs)
+evals/results/*
+!evals/results/.gitkeep
+logs/
+.DS_Store
