@@ -16,7 +16,9 @@ import time
 import anthropic
 from fastapi import FastAPI, HTTPException, Request
 from pydantic import BaseModel, Field, field_validator
-from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
+import sqlglot
 from slowapi import Limiter
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
@@ -30,9 +32,28 @@ from .config import (
     RATE_LIMIT_PER_DAY,
     RATE_LIMIT_PER_MINUTE,
     RESPONSE_MAX_ROWS,
+    ROOT,
     STATE_DIR,
 )
 from .graph import graph
+
+UI_DIR = ROOT / "ui"
+UI_HEADERS = {
+    "Content-Security-Policy": (
+        "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; "
+        "connect-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'"
+    ),
+    "X-Content-Type-Options": "nosniff",
+    "Referrer-Policy": "no-referrer",
+}
+
+
+def _pretty(sql: str) -> str:
+    """Multi-line SQL for display only. Execution always uses the guard's canonical SQL."""
+    try:
+        return sqlglot.transpile(sql, read="duckdb", write="duckdb", pretty=True)[0]
+    except Exception:
+        return sql
 
 
 def client_key(request: Request) -> str:
@@ -79,10 +100,19 @@ class AskResponse(BaseModel):
     truncated: bool
     attempts: int
     blocked: bool
+    failed: bool = False
     block_reason: str | None = None
     latency_ms: int
     input_tokens: int
     output_tokens: int
+
+
+@app.get("/", include_in_schema=False)
+def index() -> FileResponse:
+    return FileResponse(UI_DIR / "index.html", media_type="text/html", headers=UI_HEADERS)
+
+
+app.mount("/ui", StaticFiles(directory=UI_DIR), name="ui")
 
 
 @app.get("/health")
@@ -141,12 +171,13 @@ def ask(request: Request, body: AskRequest) -> AskResponse:
 
     return AskResponse(
         answer=out["answer"],
-        sql=out.get("sql", ""),
+        sql=_pretty(out.get("sql", "")) if out.get("sql") else "",
         columns=out.get("columns", []),
         rows=[list(r) for r in out.get("rows", [])[:RESPONSE_MAX_ROWS]],
         truncated=bool(out.get("truncated")) or len(out.get("rows", [])) > RESPONSE_MAX_ROWS,
         attempts=out.get("attempts", 1),
         blocked=bool(out.get("guard_reason")),
+        failed=bool(out.get("error")),
         block_reason=out.get("guard_reason"),
         latency_ms=latency_ms,
         input_tokens=usage.input_tokens,

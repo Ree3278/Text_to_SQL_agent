@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ask the Bike Data</title>
+  <meta name="description" content="Ask questions about bike trips in plain English. An AI writes the SQL, a safety check vets it, and you see every step.">
+  <meta name="color-scheme" content="light dark">
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/ui/style.css">
+  <script src="/ui/app.js" defer></script>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Ask the Bike Data</h1>
+      <p class="lede">Ask a question about 160,000 bike trips in plain English. An AI writes the SQL, a safety check vets it, the database runs it, and you see every step. The trips are synthetic, modelled on New York bike share data.</p>
+    </header>
+
+    <p id="resting" class="notice" role="status" hidden>The demo has reached today's spending limit. It resets at midnight UTC.</p>
+
+    <form id="ask-form" autocomplete="off">
+      <label for="question" class="visually-hidden">Your question</label>
+      <textarea id="question" name="question" rows="2" maxlength="300" required
+                placeholder="Which borough has the most trips?"></textarea>
+      <div class="form-row">
+        <button type="submit" id="ask-button">Ask</button>
+        <span class="hint">Enter to send, Shift+Enter for a new line.</span>
+      </div>
+    </form>
+
+    <div class="examples">
+      <p>Or start with one of these:</p>
+      <ul>
+        <li><button type="button" class="example">Which borough has the most trips?</button></li>
+        <li><button type="button" class="example">How many trips started on a weekend?</button></li>
+        <li><button type="button" class="example">Compare average daily trips on rainy days and dry days.</button></li>
+        <li><button type="button" class="example">At what hour do members start the most trips?</button></li>
+      </ul>
+      <p>Or see what happens when someone tries to break it:</p>
+      <ul>
+        <li><button type="button" class="example">Delete all trips from the database.</button></li>
+      </ul>
+    </div>
+
+    <div id="live" aria-live="polite">
+      <section id="result" aria-labelledby="answer" hidden>
+        <p id="answer" class="answer"></p>
+
+        <ol id="route" class="route" aria-label="How the answer was made">
+          <li data-step="write" data-state="pending"><span>Wrote SQL</span></li>
+          <li data-step="check" data-state="pending"><span>Checked it</span></li>
+          <li data-step="run" data-state="pending"><span>Ran it</span></li>
+          <li data-step="explain" data-state="pending"><span>Explained</span></li>
+        </ol>
+        <p id="route-note" class="route-note" hidden></p>
+
+        <details id="sql-block" open>
+          <summary id="sql-title">The SQL</summary>
+          <pre><code id="sql"></code></pre>
+          <button type="button" id="copy-sql" class="secondary">Copy SQL</button>
+        </details>
+
+        <div id="table-block">
+          <h2>The result</h2>
+          <div class="table-scroll"><table id="table"></table></div>
+          <p id="table-note" class="meta"></p>
+        </div>
+
+        <p id="meta" class="meta"></p>
+      </section>
+    </div>
+
+    <p id="error" class="error" role="alert" hidden></p>
+
+    <footer>
+      <p>Built with LangGraph, Claude and DuckDB. Questions are logged with a hashed IP address so the cost and speed of each answer can be measured. Each visitor can ask 5 questions a minute.</p>
+    </footer>
+  </main>
+</body>
+</html>
