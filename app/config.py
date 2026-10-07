@@ -9,6 +9,9 @@ load_dotenv(ROOT / ".env")  # reads ANTHROPIC_API_KEY (and LangSmith vars if set
 
 DB_PATH = Path(os.getenv("DB_PATH", ROOT / "data" / "bike.duckdb"))
 MODEL = os.getenv("MODEL", "claude-haiku-4-5-20251001")
+# These models only accept the default temperature; passing temperature=0 raises an error (this is
+# enforced in langchain-anthropic). For them we leave temperature unset, so answers are not deterministic.
+NO_TEMPERATURE_PREFIXES = ("claude-fable-5", "claude-sonnet-5-5")
 
 MAX_ROWS = 200          # rows returned to the app/LLM; more are cut off and flagged
 QUERY_TIMEOUT_S = 10    # a runaway query is interrupted after this long

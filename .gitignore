@@ -17,6 +17,7 @@ data/*.duckdb.wal
 # eval + logs (keep the summary table in the README, not raw runs)
 evals/results/*
 !evals/results/.gitkeep
+!evals/results/baseline-*
 logs/
 .DS_Store
 

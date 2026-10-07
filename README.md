@@ -85,9 +85,38 @@ rain hits casual riders hardest, electric bikes are faster. **This is synthetic 
 - [x] Weekend 1: synthetic data + LangGraph baseline
 - [x] Weekend 2 (part 1): sqlglot guard, DuckDB lockdown, retry loop, tests
 - [x] Weekend 2 (part 2): FastAPI endpoint, per-IP rate limit, daily budget cap, token/cost logging
-- [ ] Weekend 3: 25-question eval set, accuracy / latency / cost metrics, prompt iteration, Haiku vs Sonnet
+- [x] Weekend 3 (part 1): 30-question eval set, grader, metrics, Haiku vs Sonnet baseline
+- [ ] Weekend 3 (part 2): one evidence-based prompt change, measured before/after
 - [ ] Weekend 4: Docker, Fly.io deploy, UI, architecture diagram, LangSmith trace
 
-## Results
+## Evaluation
 
-_Eval table goes here once weekend 3 is done. Only measured numbers._
+30 questions with known-correct answers (`evals/questions.yaml`): lookups, dates, joins, weather joins,
+statistics, plus questions the data cannot answer and attack prompts. Each question has a gold SQL query.
+
+- **Graded by result, not by SQL text.** Both queries are run and their results compared (`evals/compare.py`):
+  integers must match exactly, decimals within rounding, column names/order and extra columns are ignored,
+  row order matters only for rankings. The grader has its own tests.
+- **Dev / test split.** 18 dev questions are for learning from failures; 12 test questions are held out.
+  Test failures are never printed while tuning, so the test score stays honest.
+- **Every run is saved** with per-question SQL, latency, tokens and cost (`evals/results/`).
+
+Reproduce: `python -m evals.run_eval --label mine` (about $0.04 on Haiku, $0.11 on Sonnet).
+
+### Baseline results (first prompt, before any tuning)
+
+| Model | Runs | Accuracy (30 questions) | Latency p50 / p95 | Cost per question |
+|---|---|---|---|---|
+| Claude Haiku 4.5 (temperature 0) | 2 | 28/30 (93%) both runs | 1.7s / 2.1s | $0.0012 |
+| Claude Sonnet 5.5 (default temperature) | 3 | 30/30 (100%) all three runs | 2.8-3.0s / 4.6-7.4s | $0.0037 |
+
+How to read this honestly:
+- Sonnet costs about **3x more** and is about **1.7x slower** for **2 more correct answers out of 30**.
+  With 30 questions that is a small, suggestive difference, not a statistically strong one.
+- Sonnet 5.5 rejects `temperature=0`, so it cannot be made deterministic; that is why it was run 3 times.
+- The eval is near its ceiling for strong models on this small, simple schema; it would need harder
+  questions to separate them further. p95 over 30 requests is effectively the second-slowest request.
+- Haiku's one visible failure: asked for weekend trips, it wrote `DAYOFWEEK(...) IN (6, 7)` assuming ISO
+  numbering. DuckDB numbers Sunday=0 .. Saturday=6, so it silently counted only Saturdays (23,057 instead of
+  44,718). The query ran without error and returned a plausible number, which is why text-to-SQL needs an eval.
+
