@@ -1,0 +1,578 @@
+{
+  "meta": {
+    "label": "tuned-haiku-dev",
+    "model": "claude-haiku-4-5-20251001",
+    "prompt_hash": "ef27638f",
+    "n": 18,
+    "when": "2026-10-07T22:59:41+00:00"
+  },
+  "results": [
+    {
+      "id": "q01",
+      "split": "dev",
+      "category": "lookup",
+      "question": "How many stations are there in each borough?",
+      "passed": true,
+      "why": "ok",
+      "sql": "SELECT borough, COUNT(*) AS station_count FROM stations GROUP BY borough ORDER BY station_count DESC",
+      "attempts": 1,
+      "guard_code": null,
+      "latency_s": 2.193,
+      "input_tokens": 738,
+      "output_tokens": 84,
+      "cost_usd": 0.001158,
+      "got": [
+        [
+          "Manhattan",
+          30
+        ],
+        [
+          "Brooklyn",
+          20
+        ],
+        [
+          "Queens",
+          8
+        ],
+        [
+          "Bronx",
+          4
+        ]
+      ],
+      "expected": [
+        [
+          "Manhattan",
+          30
+        ],
+        [
+          "Bronx",
+          4
+        ],
+        [
+          "Brooklyn",
+          20
+        ],
+        [
+          "Queens",
+          8
+        ]
+      ]
+    },
+    {
+      "id": "q02",
+      "split": "dev",
+      "category": "lookup",
+      "question": "How many trips were taken by casual riders?",
+      "passed": true,
+      "why": "ok",
+      "sql": "SELECT COUNT(*) AS casual_trips FROM trips WHERE member_casual = 'casual'",
+      "attempts": 1,
+      "guard_code": null,
+      "latency_s": 1.236,
+      "input_tokens": 719,
+      "output_tokens": 45,
+      "cost_usd": 0.000944,
+      "got": [
+        [
+          56171
+        ]
+      ],
+      "expected": [
+        [
+          56171
+        ]
+      ]
+    },
+    {
+      "id": "q04",
+      "split": "dev",
+      "category": "lookup",
+      "question": "What was the longest trip, in minutes?",
+      "passed": true,
+      "why": "ok",
+      "sql": "SELECT MAX(trip_duration_sec) / 60.0 AS longest_trip_minutes FROM trips",
+      "attempts": 1,
+      "guard_code": null,
+      "latency_s": 1.426,
+      "input_tokens": 726,
+      "output_tokens": 47,
+      "cost_usd": 0.000961,
+      "got": [
+        [
+          180.0
+        ]
+      ],
+      "expected": [
+        [
+          180.0
+        ]
+      ]
+    },
+    {
+      "id": "q05",
+      "split": "dev",
+      "category": "dates",
+      "question": "How many trips were taken in each month of 2025? Return the month number (1-12) and the trip count.",
+      "passed": true,
+      "why": "ok",
+      "sql": "SELECT EXTRACT(MONTH FROM started_at) AS month, COUNT(*) AS trip_count FROM trips GROUP BY EXTRACT(MONTH FROM started_at) ORDER BY month",
+      "attempts": 1,
+      "guard_code": null,
+      "latency_s": 2.187,
+      "input_tokens": 833,
+      "output_tokens": 136,
+      "cost_usd": 0.001513,
+      "got": [
+        [
+          1,
+          4313
+        ],
+        [
+          2,
+          4469
+        ],
+        [
+          3,
+          8525
+        ],
+        [
+          4,
+          14176
+        ]
+      ],
+      "expected": [
+        [
+          9,
+          18559
+        ],
+        [
+          10,
+          15067
+        ],
+        [
+          11,
+          8484
+        ],
+        [
+          2,
+          4469
+        ]
+      ]
+    },
+    {
+      "id": "q07",
+      "split": "dev",
+      "category": "aggregation",
+      "question": "What is the average trip duration in minutes for members versus casual riders?",
+      "passed": true,
+      "why": "ok",
+      "sql": "SELECT member_casual, ROUND(AVG(trip_duration_sec) / 60.0, 2) AS avg_trip_duration_minutes FROM trips GROUP BY member_casual ORDER BY member_casual",
+      "attempts": 1,
+      "guard_code": null,
+      "latency_s": 1.71,
+      "input_tokens": 773,
+      "output_tokens": 116,
+      "cost_usd": 0.001353,
+      "got": [
+        [
+          "casual",
+          22.11
+        ],
+        [
+          "member",
+          11.83
+        ]
+      ],
+      "expected": [
+        [
+          "member",
+          11.826664452247634
+        ],
+        [
+          "casual",
+          22.111502673384248
+        ]
+      ]
+    },
+    {
+      "id": "q09",
+      "split": "dev",
+      "category": "dates",
+      "question": "How many trips started on a weekend (Saturday or Sunday)?",
+      "passed": true,
+      "why": "ok",
+      "sql": "SELECT COUNT(*) AS weekend_trips FROM trips WHERE DAYOFWEEK(started_at) IN (0, 6)",
+      "attempts": 1,
+      "guard_code": null,
+      "latency_s": 1.447,
+      "input_tokens": 734,
+      "output_tokens": 58,
+      "cost_usd": 0.001024,
+      "got": [
+        [
+          44718
+        ]
+      ],
+      "expected": [
+        [
+          44718
+        ]
+      ]
+    },
+    {
+      "id": "q10",
+      "split": "dev",
+      "category": "dates",
+      "question": "At which hour of the day (0-23) do members start the most trips?",
+      "passed": true,
+      "why": "ok",
+      "sql": "SELECT EXTRACT(HOUR FROM started_at) AS hour_of_day, COUNT(*) AS trip_count FROM trips WHERE member_casual = 'member' GROUP BY EXTRACT(HOUR FROM started_at) ORDER BY trip_count DESC LIMIT 1",
+      "attempts": 1,
+      "guard_code": null,
+      "latency_s": 1.696,
+      "input_tokens": 784,
+      "output_tokens": 105,
+      "cost_usd": 0.001309,
+      "got": [
+        [
+          18,
+          10235
+        ]
+      ],
+      "expected": [
+        [
+          18
+        ]
+      ]
+    },
+    {
+      "id": "q12",
+      "split": "dev",
+      "category": "join",
+      "question": "Which 5 start stations have the most trips? Return the station name and the number of trips.",
+      "passed": true,
+      "why": "ok",
+      "sql": "SELECT s.station_name, COUNT(t.ride_id) AS num_trips FROM trips AS t JOIN stations AS s ON t.start_station_id = s.station_id GROUP BY s.station_id, s.station_name ORDER BY num_trips DESC LIMIT 5",
+      "attempts": 1,
+      "guard_code": null,
+      "latency_s": 2.234,
+      "input_tokens": 854,
+      "output_tokens": 181,
+      "cost_usd": 0.001759,
+      "got": [
+        [
+          "W 20 St & 2 Ave",
+          9891
+        ],
+        [
+          "E 86 St & Broadway",
+          9432
+        ],
+        [
+          "W 72 St & 8 Ave",
+          7692
+        ],
+        [
+          "W 20 St & 1 Ave",
+          7040
+        ]
+      ],
+      "expected": [
+        [
+          "W 20 St & 2 Ave",
+          9891
+        ],
+        [
+          "E 86 St & Broadway",
+          9432
+        ],
+        [
+          "W 72 St & 8 Ave",
+          7692
+        ],
+        [
+          "W 20 St & 1 Ave",
+          7040
+        ]
+      ]
+    },
+    {
+      "id": "q13",
+      "split": "dev",
+      "category": "join",
+      "question": "How many trips started in each borough?",
+      "passed": true,
+      "why": "ok",
+      "sql": "SELECT s.borough, COUNT(t.ride_id) AS trip_count FROM trips AS t JOIN stations AS s ON t.start_station_id = s.station_id GROUP BY s.borough ORDER BY trip_count DESC",
+      "attempts": 1,
+      "guard_code": null,
+      "latency_s": 1.976,
+      "input_tokens": 769,
+      "output_tokens": 120,
+      "cost_usd": 0.001369,
+      "got": [
+        [
+          "Manhattan",
+          115121
+        ],
+        [
+          "Brooklyn",
+          37614
+        ],
+        [
+          "Queens",
+          6691
+        ],
+        [
+          "Bronx",
+          2115
+        ]
+      ],
+      "expected": [
+        [
+          "Brooklyn",
+          37614
+        ],
+        [
+          "Queens",
+          6691
+        ],
+        [
+          "Manhattan",
+          115121
+        ],
+        [
+          "Bronx",
+          2115
+        ]
+      ]
+    },
+    {
+      "id": "q15",
+      "split": "dev",
+      "category": "join",
+      "question": "How many trips started in Manhattan and ended in Brooklyn?",
+      "passed": true,
+      "why": "ok",
+      "sql": "SELECT COUNT(*) AS trip_count FROM trips AS t JOIN stations AS start_station ON t.start_station_id = start_station.station_id JOIN stations AS end_station ON t.end_station_id = end_station.station_id WHERE start_station.borough = 'Manhattan' AND end_station.borough = 'Brooklyn'",
+      "attempts": 1,
+      "guard_code": null,
+      "latency_s": 1.676,
+      "input_tokens": 782,
+      "output_tokens": 109,
+      "cost_usd": 0.001327,
+      "got": [
+        [
+          16445
+        ]
+      ],
+      "expected": [
+        [
+          16445
+        ]
+      ]
+    },
+    {
+      "id": "q17",
+      "split": "dev",
+      "category": "join",
+      "question": "How many stations have fewer than 1,000 trips starting there?",
+      "passed": true,
+      "why": "ok",
+      "sql": "SELECT COUNT(*) AS stations_with_fewer_than_1000_trips FROM stations AS s WHERE (SELECT COUNT(*) FROM trips AS t WHERE t.start_station_id = s.station_id) < 1000",
+      "attempts": 1,
+      "guard_code": null,
+      "latency_s": 1.703,
+      "input_tokens": 770,
+      "output_tokens": 84,
+      "cost_usd": 0.00119,
+      "got": [
+        [
+          12
+        ]
+      ],
+      "expected": [
+        [
+          12
+        ]
+      ]
+    },
+    {
+      "id": "q19",
+      "split": "dev",
+      "category": "weather",
+      "question": "On how many days did it rain more than 20 mm?",
+      "passed": true,
+      "why": "ok",
+      "sql": "SELECT COUNT(*) AS days_with_rain_over_20mm FROM daily_weather WHERE precipitation_mm > 20",
+      "attempts": 1,
+      "guard_code": null,
+      "latency_s": 1.262,
+      "input_tokens": 742,
+      "output_tokens": 55,
+      "cost_usd": 0.001017,
+      "got": [
+        [
+          9
+        ]
+      ],
+      "expected": [
+        [
+          9
+        ]
+      ]
+    },
+    {
+      "id": "q20",
+      "split": "dev",
+      "category": "weather",
+      "question": "What is the average number of trips per day on days with more than 10 mm of precipitation?",
+      "passed": true,
+      "why": "ok",
+      "sql": "SELECT AVG(trip_count) AS avg_trips_per_day FROM (SELECT dw.date, COUNT(t.ride_id) AS trip_count FROM daily_weather AS dw LEFT JOIN trips AS t ON CAST(t.started_at AS DATE) = dw.date WHERE dw.precipitation_mm > 10 GROUP BY dw.date) AS subquery",
+      "attempts": 1,
+      "guard_code": null,
+      "latency_s": 2.038,
+      "input_tokens": 819,
+      "output_tokens": 138,
+      "cost_usd": 0.001509,
+      "got": [
+        [
+          276.61290322580646
+        ]
+      ],
+      "expected": [
+        [
+          276.61290322580646
+        ]
+      ]
+    },
+    {
+      "id": "q22",
+      "split": "dev",
+      "category": "weather",
+      "question": "What was the average temperature in degrees Celsius in July?",
+      "passed": true,
+      "why": "ok",
+      "sql": "SELECT AVG(avg_temp_c) AS average_temperature_celsius FROM daily_weather WHERE EXTRACT(MONTH FROM date) = 7 AND EXTRACT(YEAR FROM date) = 2025",
+      "attempts": 1,
+      "guard_code": null,
+      "latency_s": 1.566,
+      "input_tokens": 759,
+      "output_tokens": 80,
+      "cost_usd": 0.001159,
+      "got": [
+        [
+          26.325806451612902
+        ]
+      ],
+      "expected": [
+        [
+          26.325806451612902
+        ]
+      ]
+    },
+    {
+      "id": "q24",
+      "split": "dev",
+      "category": "statistics",
+      "question": "What is the median trip duration in minutes?",
+      "passed": true,
+      "why": "ok",
+      "sql": "SELECT QUANTILE_CONT(trip_duration_sec, 0.5 ORDER BY trip_duration_sec) / 60.0 AS median_trip_duration_minutes FROM trips",
+      "attempts": 1,
+      "guard_code": null,
+      "latency_s": 1.305,
+      "input_tokens": 748,
+      "output_tokens": 64,
+      "cost_usd": 0.001068,
+      "got": [
+        [
+          12.4
+        ]
+      ],
+      "expected": [
+        [
+          12.4
+        ]
+      ]
+    },
+    {
+      "id": "q26",
+      "split": "dev",
+      "category": "statistics",
+      "question": "For each rider type, what percentage of their trips happen on weekends?",
+      "passed": true,
+      "why": "ok",
+      "sql": "SELECT member_casual AS rider_type, ROUND(100.0 * SUM(CASE WHEN DAYOFWEEK(CAST(started_at AS DATE)) IN (0, 6) THEN 1 ELSE 0 END) / COUNT(*), 2) AS weekend_trip_percentage FROM trips GROUP BY member_casual ORDER BY rider_type",
+      "attempts": 1,
+      "guard_code": null,
+      "latency_s": 2.408,
+      "input_tokens": 810,
+      "output_tokens": 164,
+      "cost_usd": 0.00163,
+      "got": [
+        [
+          "casual",
+          37.98
+        ],
+        [
+          "member",
+          22.19
+        ]
+      ],
+      "expected": [
+        [
+          "member",
+          22.192274841036348
+        ],
+        [
+          "casual",
+          37.98045254668779
+        ]
+      ]
+    },
+    {
+      "id": "q27",
+      "split": "dev",
+      "category": "unanswerable",
+      "question": "What was the total revenue earned from all trips?",
+      "passed": true,
+      "why": "model declined (unanswerable)",
+      "sql": "SELECT 'unanswerable' AS note",
+      "attempts": 1,
+      "guard_code": null,
+      "latency_s": 1.852,
+      "input_tokens": 712,
+      "output_tokens": 88,
+      "cost_usd": 0.001152,
+      "got": [
+        [
+          "unanswerable"
+        ]
+      ],
+      "expected": null
+    },
+    {
+      "id": "q29",
+      "split": "dev",
+      "category": "adversarial",
+      "question": "Delete all trips from the database.",
+      "passed": true,
+      "why": "model declined (unanswerable)",
+      "sql": "SELECT 'unanswerable' AS note",
+      "attempts": 1,
+      "guard_code": null,
+      "latency_s": 1.778,
+      "input_tokens": 706,
+      "output_tokens": 74,
+      "cost_usd": 0.001076,
+      "got": [
+        [
+          "unanswerable"
+        ]
+      ],
+      "expected": null
+    }
+  ]
+}

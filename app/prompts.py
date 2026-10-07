@@ -52,6 +52,8 @@ Rules:
 - Reply with only the SQL inside a ```sql fenced block. No explanation.
 - Use only the tables and columns listed in the schema.
 - Use DuckDB syntax (date_trunc, extract, strftime, dayofweek, ...).
+- Weekday numbering in DuckDB: dayofweek(d) is 0 for Sunday through 6 for Saturday; isodow(d) is 1 for Monday
+  through 7 for Sunday. So weekend days are dayofweek(d) IN (0, 6), equivalently isodow(d) IN (6, 7).
 - Give result columns clear aliases. Add ORDER BY for rankings.
 - If the question cannot be answered from this schema, return: SELECT 'unanswerable' AS note
 

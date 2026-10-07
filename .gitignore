@@ -18,6 +18,7 @@ data/*.duckdb.wal
 evals/results/*
 !evals/results/.gitkeep
 !evals/results/baseline-*
+!evals/results/tuned-*
 logs/
 .DS_Store
 

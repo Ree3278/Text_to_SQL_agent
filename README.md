@@ -86,7 +86,7 @@ rain hits casual riders hardest, electric bikes are faster. **This is synthetic 
 - [x] Weekend 2 (part 1): sqlglot guard, DuckDB lockdown, retry loop, tests
 - [x] Weekend 2 (part 2): FastAPI endpoint, per-IP rate limit, daily budget cap, token/cost logging
 - [x] Weekend 3 (part 1): 30-question eval set, grader, metrics, Haiku vs Sonnet baseline
-- [ ] Weekend 3 (part 2): one evidence-based prompt change, measured before/after
+- [x] Weekend 3 (part 2): one evidence-based prompt change, measured before/after
 - [ ] Weekend 4: Docker, Fly.io deploy, UI, architecture diagram, LangSmith trace
 
 ## Evaluation
@@ -120,3 +120,27 @@ How to read this honestly:
   numbering. DuckDB numbers Sunday=0 .. Saturday=6, so it silently counted only Saturdays (23,057 instead of
   44,718). The query ran without error and returned a plausible number, which is why text-to-SQL needs an eval.
 
+### After one prompt change
+
+The only change (prompt `491c9d99` -> `ef27638f`) is one factual line added to `app/prompts.py`:
+
+```diff
++ - Weekday numbering in DuckDB: dayofweek(d) is 0 for Sunday through 6 for Saturday; isodow(d) is 1 for Monday
++   through 7 for Sunday. So weekend days are dayofweek(d) IN (0, 6), equivalently isodow(d) IN (6, 7).
+```
+
+It came from reading one **dev** failure (the weekend-trips question above). The held-out test set was run once, after the change.
+
+| Model | Dev (18 q), before -> after | Test (12 q), before -> after | All 30, before -> after |
+|---|---|---|---|
+| Claude Haiku 4.5 | 17/18 -> **18/18** | 11/12 -> 11/12 | 28/30 -> **29/30** |
+| Claude Sonnet 5.5 | 18/18 -> 18/18 | 12/12 -> 12/12 | 30/30 -> 30/30 (1 run) |
+
+What this does and does not show:
+- The fix works on the question it was written for, and the held-out set did not get worse. That is all.
+  The change is unrelated to the one held-out question Haiku still misses, so no test improvement was expected.
+- **Known weakness:** Haiku answers one held-out question it should have declined as unanswerable.
+  Its details were deliberately not inspected, to keep the test set clean. Tuning against it would turn the test
+  set into a dev set, so the next round of prompt work needs new held-out questions.
+- Sixteen of the 18 dev questions and 11 of the 12 test questions were already passing, so there was little room to
+  improve. These are small sets: one question is worth 3-8 percentage points.
