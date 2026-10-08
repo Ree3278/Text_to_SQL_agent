@@ -13,7 +13,7 @@ held-out test set, per-request cost controls, and a containerised deploy on **Fl
 untrusted component. The interesting parts are the guard that checks its output, the limits that keep one
 visitor from draining the budget, and the eval that measures whether it is right.
 
-![UI](docs/ui.png)
+![UI](doc/ui.png)
 
 ## Quickstart
 
