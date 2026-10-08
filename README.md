@@ -151,7 +151,7 @@ rain hits casual riders hardest, electric bikes are faster. **This is synthetic 
 - [x] Weekend 3 (part 1): 30-question eval set, grader, metrics, Haiku vs Sonnet baseline
 - [x] Weekend 3 (part 2): one evidence-based prompt change, measured before/after
 - [x] Weekend 4 (part 1): web UI, Docker image, Fly.io deploy with volume and secret
-- [ ] Weekend 4 (part 2): screenshots and a LangSmith trace of one request
+- [x] Weekend 4 (part 2): screenshots and a LangSmith trace of one request
 
 ## Evaluation
 
