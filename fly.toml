@@ -1,6 +1,6 @@
 # Fly.io configuration. `fly launch` would generate this; it is written by hand so every line is understood.
-app = "ask-the-bike-data"      # must be globally unique; change if `fly apps create` says it's taken
-primary_region = "ewr"          # Newark. Pick whichever region is closest to you (see `fly platform regions`).
+app = "text-to-sql-agent"      # must be globally unique; change if `fly apps create` says it's taken
+primary_region = "lax"          # Newark. Pick whichever region is closest to you (see `fly platform regions`).
 
 [build]
   dockerfile = "Dockerfile"
