@@ -39,3 +39,7 @@ def test_sql_is_pretty_printed_for_display(api):
     api.install_llm([sql_block("SELECT member_casual, COUNT(*) AS n FROM trips WHERE rideable_type = 'classic_bike' GROUP BY member_casual"), "ok"])
     body = ask(api).json()
     assert "\n" in body["sql"] and body["failed"] is False
+
+
+def test_head_request_to_index_works(api):
+    assert api.head("/").status_code == 200

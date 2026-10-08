@@ -107,7 +107,7 @@ class AskResponse(BaseModel):
     output_tokens: int
 
 
-@app.get("/", include_in_schema=False)
+@app.api_route("/", methods=["GET", "HEAD"], include_in_schema=False)
 def index() -> FileResponse:
     return FileResponse(UI_DIR / "index.html", media_type="text/html", headers=UI_HEADERS)
 

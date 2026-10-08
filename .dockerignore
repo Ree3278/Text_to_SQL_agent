@@ -1,5 +1,16 @@
-fly.toml
-.git/
-__pycache__/
-.envrc
-.venv/
+# Anything listed here is never sent to the Docker build. Most important: secrets.
+.env
+.env.*
+!.env.example
+.git
+.venv
+__pycache__
+*.pyc
+.pytest_cache
+state
+evals/results
+data/*.duckdb
+data/*.duckdb.wal
+data/parquet
+.DS_Store
+tests
