@@ -1,10 +1,19 @@
 # Ask the Bike Data
 
-A text-to-SQL agent: ask a question in plain English about a (synthetic) Citi Bike-shaped
-dataset, and get back the SQL, the result table, and a short written answer.
+**Live demo: https://text-to-sql-agent.fly.dev** (the machine sleeps when idle, so the first request can take a few seconds)
 
-Built with **LangGraph + Claude + DuckDB**, with a custom SQL security layer and eval suite
-(in progress — see roadmap).
+A text-to-SQL agent: ask a question in plain English about a (synthetic) Citi Bike-shaped
+dataset, and get back the SQL, the result table, and a short written answer. The page shows each
+step (write, check, run, explain), including when a query is blocked.
+
+Built with **LangGraph + Claude + DuckDB**, with a hand-built SQL security layer, an eval suite with a
+held-out test set, per-request cost controls, and a containerised deploy on **Fly.io**.
+
+**What this project is about:** an LLM that writes SQL for the public internet has to be treated as an
+untrusted component. The interesting parts are the guard that checks its output, the limits that keep one
+visitor from draining the budget, and the eval that measures whether it is right.
+
+![UI](docs/ui.png)
 
 ## Quickstart
 
@@ -15,10 +24,29 @@ cp .env.example .env            # then put your ANTHROPIC_API_KEY in it
 python -m data.generate         # builds data/bike.duckdb (seeded, reproducible)
 python -m app.cli --demo        # 5 starter questions
 python -m app.cli "Which borough has the most trips?"
-uvicorn app.main:app --reload   # the HTTP API on http://localhost:8000/docs
+uvicorn app.main:app --reload   # the web UI on http://localhost:8000/ and the API docs on /docs
+pytest                          # the test suite (no API key or network needed)
 ```
 
-## How it works
+## Architecture
+
+```mermaid
+graph LR;
+    B[Browser UI<br/>static HTML/JS] -->|POST /ask| F
+    subgraph Fly["Fly.io machine (Docker container, 1 worker)"]
+        F[FastAPI<br/>pydantic validation] --> RL[Per-IP rate limit<br/>slowapi]
+        RL --> BG[Daily budget gate<br/>SQLite]
+        BG --> G[LangGraph agent<br/>generate, validate, execute, summarize]
+        G --> D[(DuckDB<br/>read-only, locked down)]
+        F --> V[(Fly volume /data<br/>budget + request log)]
+    end
+    G -->|SQL + summary prompts| A[Anthropic API<br/>Claude Haiku 4.5]
+```
+
+A request is rejected as early as possible: bad input at validation, too-frequent callers at the rate limit,
+an exhausted day at the budget gate, and only then does anything cost money.
+
+## How the agent works
 
 ```mermaid
 graph TD;
@@ -52,7 +80,7 @@ to probe the guard); an **execution error** (e.g. a wrong column name) gets one 
 3. **`db.py`:** DuckDB opened `read_only`, `enable_external_access=false`, configuration locked, memory capped.
    Tested on its own: with the guard bypassed, DuckDB still refuses writes, file reads and `SET` overrides.
 
-`pytest` runs 100+ tests covering all of the above, including attack strings, plus the graph routing with a scripted fake LLM.
+`pytest` runs 160+ tests covering all of the above, including attack strings, plus the graph routing with a scripted fake LLM.
 
 ## API and cost controls
 
@@ -74,6 +102,41 @@ Cost is computed from the published per-token prices (Haiku 4.5: $1 in / $5 out 
 A first live measurement: one typical question used 676 input and 86 output tokens, about $0.0011.
 A proper average will come from the eval run.
 
+## Web UI
+
+One static page (`ui/`) served by the same FastAPI process, so there is a single container to run.
+Everything the model or database returns is inserted with `textContent`, never as HTML, and the page is
+served with a strict Content-Security-Policy (`script-src 'self'`, no inline scripts or styles), so a hostile
+question or a hostile query result cannot inject markup. A test fails if inline script, inline style or
+event-handler attributes appear in the HTML. The UI also shows the "resting" state when the daily budget is spent
+and clear messages for rate limits and upstream errors.
+
+## Deployment
+
+The app ships as one Docker image (`Dockerfile`) and runs on Fly.io (`fly.toml`).
+
+- **Image:** `python:3.12-slim`, dependencies installed before the code so rebuilds stay fast. The synthetic
+  database is generated during the build from the seeded generator, so the data never lives in git and every
+  build is identical.
+- **One worker, on purpose:** rate-limit counters are in memory, so a second worker would double every client's allowance.
+- **State:** the request log and the budget database live on a Fly volume mounted at `/data`. The container's
+  own disk is discarded on each deploy; the volume is not.
+- **Secrets:** the Anthropic key is a Fly secret (`fly secrets`), never in the image, the repo or `fly.toml`.
+  `.dockerignore` also keeps `.env` out of the build upload.
+- **Client IP:** behind Fly's proxy the app reads the `Fly-Client-IP` header for rate limiting, and only when
+  `FLY_APP_NAME` is set, so the header cannot be forged when running anywhere else.
+- **Idle cost:** the machine stops when idle and starts on the next request (`auto_stop_machines`).
+  On Fly's published prices at the time of writing, a 1 GB shared-CPU machine is $6.70/month if it ran all the time,
+  plus $0.15/month for a 1 GB volume, so an idle demo costs well under that.
+- **Isolation:** Fly runs each machine in a Firecracker micro-VM, in addition to the container boundary.
+
+```bash
+fly apps create <name>
+fly volumes create bike_state --size 1 --region <region-in-fly.toml>
+grep '^ANTHROPIC_API_KEY=' .env | fly secrets import
+fly deploy --ha=false      # one machine, because the volume attaches to one machine
+```
+
 ## Data
 
 Synthetic, seeded (`SEED=42`), ~160k trips across 62 stations for 2025. Schema mirrors the
@@ -87,7 +150,8 @@ rain hits casual riders hardest, electric bikes are faster. **This is synthetic 
 - [x] Weekend 2 (part 2): FastAPI endpoint, per-IP rate limit, daily budget cap, token/cost logging
 - [x] Weekend 3 (part 1): 30-question eval set, grader, metrics, Haiku vs Sonnet baseline
 - [x] Weekend 3 (part 2): one evidence-based prompt change, measured before/after
-- [ ] Weekend 4: Docker, Fly.io deploy, UI, architecture diagram, LangSmith trace
+- [x] Weekend 4 (part 1): web UI, Docker image, Fly.io deploy with volume and secret
+- [ ] Weekend 4 (part 2): screenshots and a LangSmith trace of one request
 
 ## Evaluation
 
@@ -144,3 +208,20 @@ What this does and does not show:
   set into a dev set, so the next round of prompt work needs new held-out questions.
 - Sixteen of the 18 dev questions and 11 of the 12 test questions were already passing, so there was little room to
   improve. These are small sets: one question is worth 3-8 percentage points.
+
+## Limits and what I would do next
+
+- **Synthetic data.** The trips are generated, so the answers describe the generator, not New York. The schema
+  matches the real export, so swapping in real data is a data-loading change.
+- **Small eval.** 30 questions on a three-table schema. Strong models are near the ceiling, and one question moves the
+  score by 3-8 points. The next step would be more and harder questions, including new held-out ones.
+- **No retrieval or vector search.** The schema is small enough to put in the prompt, so none was needed.
+  A schema with hundreds of tables would need schema retrieval.
+- **Container runs as root.** The SQL guard, the locked-down DuckDB connection and Fly's micro-VM isolation still apply, but a
+  non-root user is the standard hardening step I have not done.
+- **One machine, one volume.** There is no redundancy: a lost volume resets the budget counter and the request log, which
+  is acceptable for a demo but not for production. Rate limits are per machine.
+- **Prompt-injection risk is bounded, not removed.** The model can still be talked into answering oddly. What it cannot do
+  is run anything except a validated read-only query on a locked-down database.
+- **Tracing is optional.** LangSmith tracing can be turned on with the environment variables in `.env.example`; no trace
+  data is committed here.

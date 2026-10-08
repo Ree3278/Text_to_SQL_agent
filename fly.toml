@@ -1,6 +1,6 @@
 # Fly.io configuration. `fly launch` would generate this; it is written by hand so every line is understood.
 app = "text-to-sql-agent"      # must be globally unique; change if `fly apps create` says it's taken
-primary_region = "lax"          # Newark. Pick whichever region is closest to you (see `fly platform regions`).
+primary_region = "lax"          # Los Angeles. Must match the region of the volume (see `fly volumes list`).
 
 [build]
   dockerfile = "Dockerfile"
